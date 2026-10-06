@@ -11,6 +11,16 @@ export class NotionError extends Error {
   }
 }
 
+const NOTION_ID = /^(?:[0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
+
+/** URL パスに埋め込む ID を検証する（`../` 等で別の API を呼ばせない） */
+function assertId(id) {
+  if (typeof id !== 'string' || !NOTION_ID.test(id)) {
+    throw new NotionError(0, 'invalid_id', `invalid Notion id: ${id}`);
+  }
+  return encodeURIComponent(id);
+}
+
 /**
  * @param {string} token Notion インテグレーションのシークレット
  * @param {{ fetch?: typeof fetch }} [options]
@@ -34,9 +44,9 @@ export function createNotionClient(token, { fetch: fetchImpl = globalThis.fetch 
   }
 
   return {
-    retrieveDatabase: (id) => request('GET', `/databases/${id}`),
+    retrieveDatabase: async (id) => request('GET', `/databases/${assertId(id)}`),
     createPage: (body) => request('POST', '/pages', body),
-    archivePage: (id) => request('PATCH', `/pages/${id}`, { archived: true }),
+    archivePage: async (id) => request('PATCH', `/pages/${assertId(id)}`, { archived: true }),
   };
 }
 

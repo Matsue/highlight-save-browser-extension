@@ -9,15 +9,31 @@ const service = createSaveService({
   createClient: (token) => createNotionClient(token),
 });
 
+// 取り消せるのは、この background が保存したページだけに限定する
+const MAX_UNDOABLE = 20;
+const undoablePageIds = new Set();
+
 const save = (payload) =>
   service.save(payload).then(
-    (page) => ({ ok: true, page }),
+    (page) => {
+      undoablePageIds.add(page.id);
+      if (undoablePageIds.size > MAX_UNDOABLE) {
+        undoablePageIds.delete(undoablePageIds.values().next().value);
+      }
+      return { ok: true, page };
+    },
     (err) => ({ ok: false, error: describeError(err), code: err?.code }),
   );
 
-const undo = (pageId) =>
-  service.undo(pageId).then(
-    () => ({ ok: true }),
+const undo = (pageId) => {
+  if (!undoablePageIds.has(pageId)) {
+    return Promise.resolve({ ok: false, error: 'このページは取り消せません（直前に保存したページのみ取り消せます）。' });
+  }
+  return service.undo(pageId).then(
+    () => {
+      undoablePageIds.delete(pageId);
+      return { ok: true };
+    },
     (err) => ({
       ok: false,
       error:
@@ -26,6 +42,7 @@ const undo = (pageId) =>
           : describeError(err),
     }),
   );
+};
 
 // コンテンツスクリプトにはトークンを渡さず、表示可否だけを返す
 const getButtonConfig = async () => {
@@ -34,7 +51,8 @@ const getButtonConfig = async () => {
 };
 
 // ポップアップ・ページ内ボタンからの要求。ポップアップが閉じても完了するよう background で実行する。
-browser.runtime.onMessage.addListener((msg) => {
+browser.runtime.onMessage.addListener((msg, sender) => {
+  if (sender?.id !== browser.runtime.id) return undefined;
   switch (msg?.type) {
     case 'save':
       return save(msg.payload);

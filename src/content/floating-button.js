@@ -163,7 +163,8 @@
     showToast('取り消し中…', { sticky: true });
     const result = await send({ type: 'undo', pageId });
     if (result?.ok) showToast('取り消しました');
-    else showToast(result?.error ?? '取り消せませんでした', { error: true });
+    // 権限を直してから再試行できるよう「取り消す」を残す
+    else showToast(result?.error ?? '取り消せませんでした', { error: true, pageId });
   }
 
   document.addEventListener('selectionchange', () => {

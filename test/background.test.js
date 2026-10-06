@@ -11,6 +11,7 @@ const makeBrowser = (settings, os = 'android') => {
   return {
     listeners,
     runtime: {
+      id: 'self@ext',
       onMessage: { addListener: (fn) => (listeners.message = fn) },
       getURL: (p) => `moz-extension://x/${p}`,
       getPlatformInfo: vi.fn().mockResolvedValue({ os }),
@@ -28,7 +29,7 @@ describe('background', () => {
   const load = async (settings, os) => {
     globalThis.browser = makeBrowser(settings, os);
     await import('../src/background.js');
-    return (msg) => browser.listeners.message(msg);
+    return (msg) => browser.listeners.message(msg, { id: browser.runtime.id });
   };
 
   it('save メッセージで Notion にページを作成し、結果を返す', async () => {
@@ -48,23 +49,66 @@ describe('background', () => {
     expect(res.error).toMatch(/設定/);
   });
 
-  it('undo メッセージでページをゴミ箱に移動する', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(okJson({ id: 'p', archived: true }));
+  const PAGE = '01234567-89ab-cdef-0123-456789abcdef';
+  const OTHER = 'ffffffff-89ab-cdef-0123-456789abcdef';
+
+  it('undo: この拡張機能で保存したページをゴミ箱に移動する', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(okJson({ id: PAGE, url: 'u' }));
     const send = await load(SETTINGS);
-    expect(await send({ type: 'undo', pageId: 'p' })).toEqual({ ok: true });
-    expect(fetch.mock.calls[0][1].method).toBe('PATCH');
+    await send({ type: 'save', payload: { text: 'x' } });
+    expect(await send({ type: 'undo', pageId: PAGE })).toEqual({ ok: true });
+    expect(fetch.mock.calls[1][1].method).toBe('PATCH');
+  });
+
+  it('undo: 保存していないページは取り消さない（Notion を呼ばない）', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(okJson({ id: PAGE, url: 'u' }));
+    const send = await load(SETTINGS);
+    await send({ type: 'save', payload: { text: 'x' } });
+    const res = await send({ type: 'undo', pageId: OTHER });
+    expect(res.ok).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('undo: 同じページは二度取り消さない', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue(okJson({ id: PAGE, url: 'u' }));
+    const send = await load(SETTINGS);
+    await send({ type: 'save', payload: { text: 'x' } });
+    await send({ type: 'undo', pageId: PAGE });
+    expect((await send({ type: 'undo', pageId: PAGE })).ok).toBe(false);
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 
   it('undo の権限不足は Update content の案内を返す', async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 403,
-      json: async () => ({ code: 'restricted_resource', message: 'no' }),
-    });
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(okJson({ id: PAGE, url: 'u' }))
+      .mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: async () => ({ code: 'restricted_resource', message: 'no' }),
+      });
     const send = await load(SETTINGS);
-    const res = await send({ type: 'undo', pageId: 'p' });
+    await send({ type: 'save', payload: { text: 'x' } });
+    const res = await send({ type: 'undo', pageId: PAGE });
     expect(res.ok).toBe(false);
     expect(res.error).toMatch(/Update content/);
+  });
+
+  it('undo が失敗したら、権限を直した後に再試行できる', async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(okJson({ id: PAGE, url: 'u' }))
+      .mockResolvedValueOnce({ ok: false, status: 403, json: async () => ({ code: 'restricted_resource' }) })
+      .mockResolvedValueOnce(okJson({ id: PAGE, archived: true }));
+    const send = await load(SETTINGS);
+    await send({ type: 'save', payload: { text: 'x' } });
+    expect((await send({ type: 'undo', pageId: PAGE })).ok).toBe(false);
+    expect(await send({ type: 'undo', pageId: PAGE })).toEqual({ ok: true });
+  });
+
+  it('他の拡張機能からのメッセージは無視する', async () => {
+    const send = await load(SETTINGS);
+    expect(browser.listeners.message({ type: 'getButtonConfig' }, { id: 'evil@x' })).toBeUndefined();
   });
 
   it('getButtonConfig は設定とOSから表示可否だけを返す（トークンは渡さない）', async () => {
