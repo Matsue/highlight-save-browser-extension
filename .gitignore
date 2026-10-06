@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.web-extension-id
+.dev-profile/
+.env
+.env.*
+.amo-upload-uuid

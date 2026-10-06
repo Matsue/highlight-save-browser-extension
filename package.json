@@ -1,0 +1,20 @@
+{
+  "name": "highlight-save-browser-extension",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "web-ext lint --source-dir src --self-hosted",
+    "start": "web-ext run --source-dir src",
+    "start:android": "web-ext run --source-dir src -t firefox-android --firefox-apk org.mozilla.firefox",
+    "build": "web-ext build --source-dir src --artifacts-dir dist --overwrite-dest",
+    "sign": "web-ext sign --source-dir src --artifacts-dir dist --channel unlisted",
+    "release": "node scripts/release.js"
+  },
+  "devDependencies": {
+    "vitest": "^5.0.2",
+    "web-ext": "^10.7.0"
+  }
+}

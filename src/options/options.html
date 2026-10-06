@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Highlight Save 設定</title>
+  <link rel="stylesheet" href="../ui/common.css" />
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main>
+    <h1>Highlight Save to Notion</h1>
+
+    <details class="help">
+      <summary>はじめての設定手順</summary>
+      <ol>
+        <li><a href="https://www.notion.so/profile/integrations" target="_blank" rel="noreferrer">Notion のインテグレーション管理</a>で「新しいインテグレーション」（内部）を作成し、シークレットをコピー</li>
+        <li>保存先のDBを開き、右上「…」→「接続」から作成したインテグレーションを追加</li>
+        <li>DBのURL（「リンクをコピー」で取得）と、シークレットを下に貼り付けて「DBを読み込む」</li>
+      </ol>
+    </details>
+
+    <form id="form">
+      <label for="token">インテグレーションのシークレット</label>
+      <input id="token" type="password" autocomplete="off" placeholder="ntn_..." required />
+
+      <label for="database">データベースのURL または ID</label>
+      <input id="database" type="text" placeholder="https://www.notion.so/..." required />
+
+      <div class="row"><button id="load" type="button">DBを読み込む</button></div>
+
+      <fieldset id="mapping" disabled>
+        <legend id="db-title">保存先プロパティ</legend>
+        <label for="map-title">選択テキスト → タイトル</label>
+        <select id="map-title"></select>
+        <label for="map-url">ページのURL →</label>
+        <select id="map-url"></select>
+        <label for="map-page-title">ページのタイトル →</label>
+        <select id="map-page-title"></select>
+        <label for="map-note">メモ →</label>
+        <select id="map-note"></select>
+        <p class="hint">ページ本文には何も書き込みません。「保存しない」の項目は Notion に送られません。</p>
+      </fieldset>
+
+      <div class="row"><button id="save" type="submit" class="primary" disabled>保存</button></div>
+      <p id="status" class="status" role="status"></p>
+    </form>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

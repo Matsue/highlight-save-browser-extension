@@ -1,0 +1,60 @@
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #191919;
+  --muted: #6b6b6b;
+  --border: #dcdcdc;
+  --field: #f7f7f5;
+  --accent: #2383e2;
+  --accent-fg: #ffffff;
+  --ok: #0f7b3e;
+  --err: #c4321b;
+  --mark: #ffe066;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1f1f1f;
+    --fg: #ececec;
+    --muted: #9b9b9b;
+    --border: #3a3a3a;
+    --field: #2a2a2a;
+    --accent: #529cca;
+    --ok: #4dab6f;
+    --err: #ff7369;
+    --mark: #6b5b1a;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.5 system-ui, -apple-system, "Hiragino Sans", sans-serif;
+}
+label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 4px; }
+input, textarea, select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--field);
+  color: var(--fg);
+  font: inherit;
+}
+textarea { resize: vertical; }
+button {
+  font: inherit;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 14px;
+  background: var(--field);
+  color: var(--fg);
+  cursor: pointer;
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 600; }
+button:disabled { opacity: .5; cursor: default; }
+.status { min-height: 1.5em; margin: 10px 0 0; white-space: pre-wrap; }
+.status.ok { color: var(--ok); }
+.status.err { color: var(--err); }
+a { color: var(--accent); }
+.hidden { display: none !important; }
