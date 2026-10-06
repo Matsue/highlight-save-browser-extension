@@ -1,6 +1,7 @@
 import { parseDatabaseId } from '../core/database-id.js';
 import { detectMapping, listPropertyOptions } from '../core/mapping.js';
 import { createNotionClient, describeError } from '../core/notion-client.js';
+import { DEFAULT_BUTTON_MODE } from '../core/button-config.js';
 import { loadSettings, saveSettings } from '../adapters/settings.js';
 
 const $ = (id) => document.getElementById(id);
@@ -63,6 +64,7 @@ async function loadDatabase({ keepMapping } = {}) {
 
 async function init() {
   const settings = await loadSettings();
+  $('floating-button').value = settings?.floatingButton ?? DEFAULT_BUTTON_MODE;
   if (settings) {
     $('token').value = settings.token;
     $('database').value = settings.databaseId;
@@ -78,6 +80,7 @@ async function init() {
       databaseId: parseDatabaseId($('database').value),
       databaseTitle,
       mapping: readMapping(),
+      floatingButton: $('floating-button').value,
     });
     setStatus('保存しました。ページでテキストを選択して拡張機能を開いてください。', 'ok');
   });

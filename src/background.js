@@ -1,5 +1,6 @@
 import { createNotionClient, describeError } from './core/notion-client.js';
 import { createSaveService } from './core/save-service.js';
+import { shouldShowButton } from './core/button-config.js';
 import { loadSettings } from './adapters/settings.js';
 import { getPageContext } from './adapters/page-context.js';
 
@@ -14,10 +15,36 @@ const save = (payload) =>
     (err) => ({ ok: false, error: describeError(err), code: err?.code }),
   );
 
-// ポップアップからの保存要求。ポップアップが閉じても処理が完了するよう background で実行する。
+const undo = (pageId) =>
+  service.undo(pageId).then(
+    () => ({ ok: true }),
+    (err) => ({
+      ok: false,
+      error:
+        err?.status === 403
+          ? '取り消せませんでした。インテグレーションの「Update content」権限を有効にしてください。'
+          : describeError(err),
+    }),
+  );
+
+// コンテンツスクリプトにはトークンを渡さず、表示可否だけを返す
+const getButtonConfig = async () => {
+  const [settings, { os }] = await Promise.all([loadSettings(), browser.runtime.getPlatformInfo()]);
+  return { enabled: shouldShowButton(settings, os) };
+};
+
+// ポップアップ・ページ内ボタンからの要求。ポップアップが閉じても完了するよう background で実行する。
 browser.runtime.onMessage.addListener((msg) => {
-  if (msg?.type === 'save') return save(msg.payload);
-  return undefined;
+  switch (msg?.type) {
+    case 'save':
+      return save(msg.payload);
+    case 'undo':
+      return undo(msg.pageId);
+    case 'getButtonConfig':
+      return getButtonConfig();
+    default:
+      return undefined;
+  }
 });
 
 // 右クリックメニュー（デスクトップのみ。Android には menus API が無い）

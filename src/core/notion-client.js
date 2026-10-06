@@ -36,6 +36,7 @@ export function createNotionClient(token, { fetch: fetchImpl = globalThis.fetch 
   return {
     retrieveDatabase: (id) => request('GET', `/databases/${id}`),
     createPage: (body) => request('POST', '/pages', body),
+    archivePage: (id) => request('PATCH', `/pages/${id}`, { archived: true }),
   };
 }
 

@@ -42,6 +42,14 @@
         <p class="hint">ページ本文には何も書き込みません。「保存しない」の項目は Notion に送られません。</p>
       </fieldset>
 
+      <label for="floating-button">テキスト選択時の「Notionに保存」ボタン</label>
+      <select id="floating-button">
+        <option value="always">常に表示</option>
+        <option value="android">Android のみ表示</option>
+        <option value="off">表示しない</option>
+      </select>
+      <p class="hint">変更は、開き直したページから反映されます。保存後の「取り消す」には、インテグレーションの「Update content」権限が必要です。</p>
+
       <div class="row"><button id="save" type="submit" class="primary" disabled>保存</button></div>
       <p id="status" class="status" role="status"></p>
     </form>

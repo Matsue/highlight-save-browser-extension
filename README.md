@@ -6,7 +6,8 @@ Firefox（Android / macOS）で、選択したテキストと閲覧中のペー�
 
 | 環境 | 操作 |
 | --- | --- |
-| Android | テキストを選択 → メニュー（⋮）→ 拡張機能 →「Notionに保存」→ 保存ボタン |
+| Android / macOS | テキストを選択 → 選択範囲の下に出る「Notionに保存」ボタンをタップ（1 タップで保存。直後の「取り消す」で Notion のゴミ箱へ） |
+| Android | メニュー（⋮）→ 拡張機能 →「Notionに保存」→ 編集してから保存 |
 | macOS | テキストを選択 → 右クリック →「Notionに保存」（ポップアップなしで即保存し、通知で結果を表示） |
 | macOS | ツールバーのアイコン、または `Alt+Shift+S` → ポップアップで編集してから保存 |
 
@@ -16,9 +17,12 @@ Android でメニューを開いた拍子に選択が外れても、直近 5 分
 
 ## 初期設定
 
-1. [Notion のインテグレーション管理](https://www.notion.so/profile/integrations)で内部インテグレーションを作り、シークレットをコピーする
+1. [Notion のインテグレーション管理](https://www.notion.so/profile/integrations)で内部インテグレーション（API token）を作り、シークレットをコピーする
+   - Capabilities は **Read content / Insert content / Update content**（Update は「取り消す」に使用）。ユーザー情報は不要
 2. 保存先の DB を開き、「…」→「接続」でそのインテグレーションを追加する
 3. 拡張機能の設定画面にシークレットと DB の URL を貼り付け、「DBを読み込む」→「保存」
+
+選択時の保存ボタンは、設定画面で「常に表示（既定）／Android のみ／表示しない」を選べます。
 
 ### 保存先プロパティ
 
@@ -96,7 +100,10 @@ src/
     save-service.js  保存ユースケース（設定とクライアントを注入）
   adapters/    browser.* API との境界（storage・tabs）
   background.js  保存処理と右クリックメニュー
-  content/       選択テキストのキャッシュ
+  content/       ページ内で動くスクリプト（通常スクリプト。トークンは扱わない）
+    floating-logic.js   保存ボタンの位置計算など（globalThis 経由でテストからも利用）
+    floating-button.js  選択時の保存ボタンと「取り消す」トースト（Shadow DOM）
+    selection-cache.js  直近の選択テキストのキャッシュ
   popup/ options/ ui/   画面
 ```
 

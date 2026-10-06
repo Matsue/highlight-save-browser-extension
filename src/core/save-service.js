@@ -6,12 +6,17 @@ import { NotionError } from './notion-client.js';
  * @param {{ loadSettings: () => Promise<any>, createClient: (token: string) => { createPage: Function } }} deps
  */
 export function createSaveService({ loadSettings, createClient }) {
+  async function loadConfigured() {
+    const settings = await loadSettings();
+    if (!settings?.token || !settings.databaseId || !settings.mapping?.title) {
+      throw new NotionError(0, 'not_configured', 'not configured');
+    }
+    return settings;
+  }
+
   return {
     async save({ text, pageTitle, url, note }) {
-      const settings = await loadSettings();
-      if (!settings?.token || !settings.databaseId || !settings.mapping?.title) {
-        throw new NotionError(0, 'not_configured', 'not configured');
-      }
+      const settings = await loadConfigured();
       const body = buildPageRequest({
         databaseId: settings.databaseId,
         mapping: settings.mapping,
@@ -22,6 +27,12 @@ export function createSaveService({ loadSettings, createClient }) {
       });
       const page = await createClient(settings.token).createPage(body);
       return { id: page.id, url: page.url };
+    },
+
+    /** 保存したページを取り消す（Notion のゴミ箱へ移動） */
+    async undo(pageId) {
+      const settings = await loadConfigured();
+      await createClient(settings.token).archivePage(pageId);
     },
   };
 }

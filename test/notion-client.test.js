@@ -33,6 +33,16 @@ describe('createNotionClient', () => {
     expect(fetch.mock.calls[0][1].method).toBe('GET');
   });
 
+  it('ページをゴミ箱に移動する（archived: true）', async () => {
+    const fetch = vi.fn().mockResolvedValue(jsonResponse(200, { id: 'p1', archived: true }));
+    const client = createNotionClient('tok', { fetch });
+    await client.archivePage('p1');
+    const [url, init] = fetch.mock.calls[0];
+    expect(url).toBe('https://api.notion.com/v1/pages/p1');
+    expect(init.method).toBe('PATCH');
+    expect(JSON.parse(init.body)).toEqual({ archived: true });
+  });
+
   it('APIエラーは NotionError に変換する', async () => {
     const fetch = vi.fn().mockResolvedValue(
       jsonResponse(404, { object: 'error', code: 'object_not_found', message: 'nope' }),

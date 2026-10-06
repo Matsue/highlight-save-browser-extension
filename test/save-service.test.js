@@ -11,6 +11,7 @@ const makeDeps = (overrides = {}) => ({
   loadSettings: vi.fn().mockResolvedValue(settings),
   createClient: vi.fn(() => ({
     createPage: vi.fn().mockResolvedValue({ id: 'p1', url: 'https://notion.so/p1' }),
+    archivePage: vi.fn().mockResolvedValue({ id: 'p1', archived: true }),
   })),
   ...overrides,
 });
@@ -44,5 +45,17 @@ describe('createSaveService', () => {
     await expect(service.save({ pageTitle: 'T', url: 'https://a.com' })).rejects.toMatchObject({
       code: 'not_configured',
     });
+  });
+
+  it('undo で作成したページをゴミ箱に移動する', async () => {
+    const deps = makeDeps();
+    await createSaveService(deps).undo('p1');
+    const client = deps.createClient.mock.results[0].value;
+    expect(client.archivePage).toHaveBeenCalledWith('p1');
+  });
+
+  it('undo も未設定なら NOT_CONFIGURED エラー', async () => {
+    const service = createSaveService(makeDeps({ loadSettings: vi.fn().mockResolvedValue(null) }));
+    await expect(service.undo('p1')).rejects.toMatchObject({ code: 'not_configured' });
   });
 });

@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Highlight Save to Notion",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "選択したテキストとページのURLを Notion のデータベースに保存します。",
   "browser_specific_settings": {
     "gecko": {
@@ -37,7 +37,9 @@
         "<all_urls>"
       ],
       "js": [
-        "content/selection-cache.js"
+        "content/floating-logic.js",
+        "content/selection-cache.js",
+        "content/floating-button.js"
       ],
       "run_at": "document_idle"
     }
