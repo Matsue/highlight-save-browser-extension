@@ -68,6 +68,15 @@ if (!signed) {
   if (!signed) fail(`${DIST}/ に ${version} の署名済み xpi が見つかりません。`);
 }
 
+// 古いビルド（update_url を含まない等）を誤ってリリースしないよう、署名済み xpi の中身を確認する
+const signedManifest = JSON.parse(read('unzip', ['-p', join(DIST, signed), 'manifest.json']));
+if (
+  signedManifest.version !== version ||
+  signedManifest.browser_specific_settings?.gecko?.update_url !== updateUrl
+) {
+  fail(`${DIST}/${signed} の manifest が現在のソースと一致しません（version / update_url）。`);
+}
+
 // --- アセット作成とリリース ---------------------------------------------
 mkdirSync(OUT, { recursive: true });
 const xpi = join(OUT, assetName(version));
